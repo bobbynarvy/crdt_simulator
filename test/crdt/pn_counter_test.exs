@@ -23,14 +23,14 @@ defmodule CRDT.PNCounterTest do
   end
 
   test "compares the value of 2 replicas" do
-    counter1 = {[0, 0, 0], [0, 0, 1]}
-    counter2 = {[0, 0, 0], [0, 0, 0]}
+    counter1 = {[0, 0, 0], [0, 0, 0]}
+    counter2 = {[0, 0, 0], [0, 0, 1]}
     assert PNC.compare(counter1, counter2) == true
   end
 
   test "compares the value of 2 replicas -- evaluates to false" do
-    counter1 = {[0, 0, 0], [0, 0, 1]}
-    counter2 = {[0, 0, 0], [2, 2, 2]}
+    counter1 = {[0, 0, 0], [2, 2, 2]}
+    counter2 = {[0, 0, 0], [0, 0, 1]}
     assert PNC.compare(counter1, counter2) == false
   end
 
