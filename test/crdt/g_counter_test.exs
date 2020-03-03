@@ -11,6 +11,10 @@ defmodule CRDT.GCounterTest do
     assert GC.update({:increment, [0, 0, 0], 2}) == [0, 0, 1]
   end
 
+  test "returns tha value" do
+    assert GC.query({:value, [1, 2, 3]}) == 6
+  end
+
   test "compares two sets" do
     assert GC.compare([0, 1], [0, 0]) == true
   end

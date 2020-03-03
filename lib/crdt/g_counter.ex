@@ -23,7 +23,7 @@ defmodule CRDT.GCounter do
   Returns the current value of the CRDT
   """
   def query({:value, set}) do
-    set
+    Enum.sum(set)
   end
 
   @doc """
@@ -32,8 +32,7 @@ defmodule CRDT.GCounter do
   """
   def compare(x, y) do
     List.zip([x, y])
-    |> Enum.map(fn pair -> elem(pair, 0) <= elem(pair, 1) end)
-    |> Enum.filter(fn smaller? -> smaller? end)
+    |> Enum.filter(fn {x, y} -> x <= y end)
     |> (fn results -> length(results) > 0 end).()
   end
 
@@ -43,7 +42,6 @@ defmodule CRDT.GCounter do
   """
   def merge(x, y) do
     List.zip([x, y])
-    |> Enum.map(fn pair -> Tuple.to_list(pair) end)
-    |> Enum.map(fn pair -> Enum.max(pair) end)
+    |> Enum.map(fn {x, y} -> Enum.max([x, y]) end)
   end
 end
