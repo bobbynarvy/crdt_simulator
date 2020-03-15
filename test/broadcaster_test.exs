@@ -4,9 +4,10 @@ defmodule BroadcasterTest do
 
   setup do
     # Broadcaster server PID
-    {:ok, pid} = start_link() 
-    
+    {:ok, pid} = start_link()
+
     init_state = %{msg: "", list: []}
+
     for _ <- 1..3 do
       rec_pid = spawn(fn -> receive_msg(init_state) end)
 
@@ -54,7 +55,7 @@ defmodule BroadcasterTest do
   end
 
   test "sends messages to all recipients", ctx do
-    send_msg(ctx.pid, send_fn({:msg, "hello world"}))
+    send_msg(ctx.pid, {send_fn({:msg, "hello world"})})
 
     for rec_pid <- recipients(ctx.pid) do
       assert query_process(rec_pid, :msg) == "hello world"
@@ -63,7 +64,7 @@ defmodule BroadcasterTest do
 
   test "sends a message to a recipient", ctx do
     rec_pid = recipients(ctx.pid, 0)
-    send_msg(ctx.pid, rec_pid, send_fn({:msg, "hello man"}))
+    send_msg(ctx.pid, {send_fn({:msg, "hello man"}), rec_pid})
 
     assert query_process(rec_pid, :msg) == "hello man"
   end
@@ -72,7 +73,7 @@ defmodule BroadcasterTest do
     rec1_pid = recipients(ctx.pid, 0)
     rec2_pid = recipients(ctx.pid, 1)
 
-    send_msg(ctx.pid, [
+    send_msgs(ctx.pid, [
       {rec1_pid, send_fn({:msg, "how are you?"})},
       {rec2_pid, send_fn({:msg, "i'm fine"})}
     ])
@@ -83,8 +84,10 @@ defmodule BroadcasterTest do
 
   test "adds an optional delay to a message", ctx do
     rec_pid = recipients(ctx.pid, 2)
-    send_msg(ctx.pid, rec_pid, send_fn({:add, "world"}), %{delay: 3000})
-    send_msg(ctx.pid, rec_pid, send_fn({:add, "hello"}))
+    send_msg(ctx.pid, {send_fn({:add, "world"}), rec_pid, %{delay: 3000}})
+    send_msg(ctx.pid, {send_fn({:add, "hello"}), rec_pid})
+
+    Process.sleep(3000)
 
     # check the ordering of list... since "world" has a delayed delivery,
     # it should be last
@@ -95,12 +98,12 @@ defmodule BroadcasterTest do
     rec1_pid = recipients(ctx.pid, 0)
     rec2_pid = recipients(ctx.pid, 1)
 
-    send_msg(ctx.pid, rec1_pid, send_fn({:msg, "life is good"}), %{delay: 3000})
-    send_msg(ctx.pid, rec2_pid, send_fn({:msg, "life is cool"}))
+    send_msg(ctx.pid, {send_fn({:msg, "life is good"}), rec1_pid, %{delay: 3000}})
+    send_msg(ctx.pid, {send_fn({:msg, "life is cool"}), rec2_pid})
 
-    # rec2 should immediately update its state while rec1 keeps its old one
+    # rec2 should immediately update its state while rec1 is still empty
     assert query_process(rec2_pid, :msg) == "life is cool"
-    assert query_process(rec1_pid, :msg) == "hello man"
+    assert query_process(rec1_pid, :msg) == ""
 
     # wait for delay to finish and check that rec1's state is updated
     Process.sleep(3000)
@@ -109,8 +112,9 @@ defmodule BroadcasterTest do
 
   test "fails a message delivery on purpose", ctx do
     rec_pid = recipients(ctx.pid, 0)
-    send_msg(ctx.pid, rec_pid, send_fn({:add, "something"}), %{fail: true})
+    {status, _} = send_msg(ctx.pid, {send_fn({:add, "something"}), rec_pid, %{fail: true}})
 
     assert query_process(rec_pid, :list) == []
+    assert status == :error
   end
 end

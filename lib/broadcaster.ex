@@ -18,16 +18,33 @@ defmodule Broadcaster do
     GenServer.call(pid, {:recipients, index})
   end
 
-  def send_msg(pid, send_fn) do
-    GenServer.call(pid, {:send_msg, send_fn})
+  def send_msg(pid, params) do
+    case params do
+      {send_fn} ->
+        for rec_pid <- recipients(pid) do
+          GenServer.call(pid, {:send_msg, rec_pid, send_fn, %{}})
+        end
+
+      {send_fn, opts} when is_map(opts) ->
+        for rec_pid <- recipients(pid) do
+          GenServer.call(pid, {:send_msg, rec_pid, send_fn, opts})
+        end
+
+      {send_fn, rec_pid} ->
+        GenServer.call(pid, {:send_msg, rec_pid, send_fn, %{}})
+
+      {send_fn, rec_pid, opts} ->
+        GenServer.call(pid, {:send_msg, rec_pid, send_fn, opts})
+    end
   end
 
-  def send_msg(pid, rec_pid, send_fn) do
-    GenServer.call(pid, {:send_msg, rec_pid, send_fn})
-  end
-
-  def send_msg(pid, rec_pid, send_fn, opts) do
-    
+  def send_msgs(pid, msgs) do
+    for msg <- msgs do
+      case msg do
+        {rec_pid, send_fn} -> GenServer.call(pid, {:send_msg, rec_pid, send_fn, %{}})
+        {rec_pid, send_fn, opts} -> GenServer.call(pid, {:send_msg, rec_pid, send_fn, opts})
+      end
+    end
   end
 
   @impl true
@@ -51,18 +68,20 @@ defmodule Broadcaster do
     {:reply, Enum.at(state.recipients, index), state}
   end
 
-  @impl true
-  def handle_call({:send_msg, send_fn}, _from, state) do
-    for rec_pid <- state.recipients do
-      spawn(fn -> send_fn.(rec_pid) end)
+  def handle_call({:send_msg, rec_pid, send_fn, opts}, _from, state) do
+    fail = Map.get(opts, :fail, false)
+    delay = Map.get(opts, :delay, 0)
+
+    if not fail do
+      spawn(fn ->
+        Process.sleep(delay)
+
+        send_fn.(rec_pid)
+      end)
+
+      {:reply, {:ok, "Message sent"}, state}
+    else
+      {:reply, {:error, "Message sending failed"}, state}
     end
-
-    {:reply, :ok, state}
-  end
-
-  def handle_call({:send_msg, rec_pid, send_fn}, _from, state) do
-    spawn(fn -> send_fn.(rec_pid) end)
-
-    {:reply, :ok, state}
   end
 end
