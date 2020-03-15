@@ -84,10 +84,10 @@ defmodule BroadcasterTest do
 
   test "adds an optional delay to a message", ctx do
     rec_pid = recipients(ctx.pid, 2)
-    send_msg(ctx.pid, {send_fn({:add, "world"}), rec_pid, %{delay: 3000}})
+    send_msg(ctx.pid, {send_fn({:add, "world"}), rec_pid, %{delay: 1000}})
     send_msg(ctx.pid, {send_fn({:add, "hello"}), rec_pid})
 
-    Process.sleep(3000)
+    Process.sleep(1000)
 
     # check the ordering of list... since "world" has a delayed delivery,
     # it should be last
@@ -98,7 +98,7 @@ defmodule BroadcasterTest do
     rec1_pid = recipients(ctx.pid, 0)
     rec2_pid = recipients(ctx.pid, 1)
 
-    send_msg(ctx.pid, {send_fn({:msg, "life is good"}), rec1_pid, %{delay: 3000}})
+    send_msg(ctx.pid, {send_fn({:msg, "life is good"}), rec1_pid, %{delay: 1000}})
     send_msg(ctx.pid, {send_fn({:msg, "life is cool"}), rec2_pid})
 
     # rec2 should immediately update its state while rec1 is still empty
@@ -106,8 +106,22 @@ defmodule BroadcasterTest do
     assert query_process(rec1_pid, :msg) == ""
 
     # wait for delay to finish and check that rec1's state is updated
-    Process.sleep(3000)
+    Process.sleep(1000)
     assert query_process(rec1_pid, :msg) == "life is good"
+  end
+
+  test "does not guarantee ordered delivery", ctx do
+    rec_pid = recipients(ctx.pid, 0)
+
+    send_msg(ctx.pid, {send_fn({:msg, "life is good"}), rec_pid, %{delay: 1000}})
+    assert query_process(rec_pid, :msg) == ""
+
+    send_msg(ctx.pid, {send_fn({:msg, "life is cool"}), rec_pid})
+    assert query_process(rec_pid, :msg) == "life is cool"
+
+    Process.sleep(1000)
+
+    assert query_process(rec_pid, :msg) == "life is good"
   end
 
   test "fails a message delivery on purpose", ctx do

@@ -68,6 +68,7 @@ defmodule Broadcaster do
     {:reply, Enum.at(state.recipients, index), state}
   end
 
+  @impl true
   def handle_call({:send_msg, rec_pid, send_fn, opts}, _from, state) do
     fail = Map.get(opts, :fail, false)
     delay = Map.get(opts, :delay, 0)
