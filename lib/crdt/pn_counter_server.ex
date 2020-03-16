@@ -1,10 +1,13 @@
 defmodule CRDT.PNCounterServer do
   use GenServer
   alias CRDT.PNCounter, as: PNC
+  alias CRDT.Server, as: Server
+  @behaviour Server
 
   # Client
 
-  def start_link(n, position) do
+  @impl Server
+  def start_link({n, position}) do
     state = %{
       counter: PNC.initialize(n),
       position: position
@@ -13,18 +16,22 @@ defmodule CRDT.PNCounterServer do
     GenServer.start_link(__MODULE__, state)
   end
 
+  @impl Server
   def query(server, type) do
     GenServer.call(server, {:query, type})
   end
 
+  @impl Server
   def update(server, {type}) do
     GenServer.call(server, {:update, type})
   end
 
+  @impl Server
   def compare(server1, server2) do
     GenServer.call(server1, {:compare, server2})
   end
 
+  @impl Server
   def merge(server1, server2) do
     GenServer.call(server1, {:merge, server2})
   end
