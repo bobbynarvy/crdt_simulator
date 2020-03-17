@@ -20,7 +20,7 @@ defmodule CRDT.ReplicaTest do
 
   test "updates a replica" do
     {:ok, counter} = start_link({:pn_counter, 3, 1})
-    {:ok} = update(counter, {:increment})
+    :ok = update(counter, {:increment})
     assert query(counter, :payload) == {[0, 1, 0], [0, 0, 0]}
   end
 
@@ -36,6 +36,14 @@ defmodule CRDT.ReplicaTest do
     {:ok, counter2} = start_link({:pn_counter, 3, 2})
     update(counter2, {:increment})
     assert compare(counter1, counter2) == false
+  end
+
+  test "returns error when replicas don't have the same type" do
+    {:ok, pid1} = start_link({:pn_counter, 3, 1})
+    {:ok, pid2} = start_link({:g_counter, 3, 1})
+    {status, error} = compare(pid1, pid2)
+    assert status == :error
+    assert error == "The replicas do not have the same type."
   end
 
   test "merges two replicas" do
