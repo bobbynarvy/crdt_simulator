@@ -14,28 +14,28 @@ defmodule CRDT.GCounterServerTest do
   end
 
   test "queries the payload of the counter", ctx do
-    assert query(ctx.pid, :payload) = [0, 0]
+    assert query(ctx.pid, :payload) == [0, 0]
   end
 
   test "queries the value of the counter", ctx do
-    assert query(ctx.pid, :value) = 0
+    assert query(ctx.pid, :value) == 0
   end
 
-  test "increments a counter" do
+  test "increments a counter", ctx do
     status = update(ctx.pid, {:increment})
     assert status == :ok
-    assert query(pid, :value) = 1
+    assert query(ctx.pid, :value) == 1
   end
 
-  test "compares two counters" do
+  test "compares two counters", ctx do
     update(ctx.pid2, {:increment})
-    assert compare(pid, pid2) == true
+    assert compare(ctx.pid, ctx.pid2) == true
   end
 
-  test "merges two counters" do
+  test "merges two counters", ctx do
     update(ctx.pid, {:increment})
     update(ctx.pid2, {:increment})
-    assert query(ctx.pid, :payload) = [1, 1]
-    assert query(pid, :value) == 2
+    assert query(ctx.pid, :payload) == [1, 1]
+    assert query(ctx.pid, :value) == 2
   end
 end
