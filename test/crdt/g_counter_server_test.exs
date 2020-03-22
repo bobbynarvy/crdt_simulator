@@ -35,6 +35,7 @@ defmodule CRDT.GCounterServerTest do
   test "merges two counters", ctx do
     update(ctx.pid, {:increment})
     update(ctx.pid2, {:increment})
+    merge(ctx.pid, ctx.pid2)
     assert query(ctx.pid, :payload) == [1, 1]
     assert query(ctx.pid, :value) == 2
   end
