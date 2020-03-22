@@ -1,6 +1,8 @@
 defmodule CRDT.Replica do
   # A wrapper for the different CRDT implementations
 
+  alias CRDT.PNCounterServer, as: PCS
+  alias CRDT.GCounterServer, as: GCS
   use Agent
 
   @spec start_link(tuple) :: {:ok, pid} | {:error, String.t()}
@@ -8,10 +10,10 @@ defmodule CRDT.Replica do
     initial_value =
       case params do
         {:pn_counter, size, i} ->
-          initial_value(:pn_counter, CRDT.PNCounterServer.start_link({size, i}))
+          initial_value(:pn_counter, PCS.start_link({size, i}))
 
         {:g_counter, size, i} ->
-          initial_value(:g_counter, nil)
+          initial_value(:g_counter, GCS.start_link({size, i}))
 
         {:g_set, i} ->
           initial_value(:g_counter, nil)
@@ -31,7 +33,10 @@ defmodule CRDT.Replica do
     Agent.get(replica, fn {type, pid} ->
       case type do
         :pn_counter ->
-          CRDT.PNCounterServer.query(pid, params)
+          PCS.query(pid, params)
+
+        :g_counter ->
+          GCS.query(pid, params)
 
         _ ->
           {:error, "Invalid replica."}
@@ -44,7 +49,10 @@ defmodule CRDT.Replica do
     Agent.get(replica, fn {type, pid} ->
       case type do
         :pn_counter ->
-          CRDT.PNCounterServer.update(pid, params)
+          PCS.update(pid, params)
+
+        :g_counter ->
+          GCS.update(pid, params)
 
         _ ->
           {:error, "Invalid replica."}
@@ -55,13 +63,16 @@ defmodule CRDT.Replica do
   @spec merge(pid, pid) :: :ok | {:error, String.t()}
   def merge(replica, replica2) do
     case with_two_replicas(replica, replica2) do
-      {type1, _, type2, _} when type1 != type2 ->
-        {:error, "The replicas do not have the same type."}
+      {:error, error} ->
+        {:error, error}
 
-      {type, pid1, _, pid2} ->
+      {type, pid1, pid2} ->
         case type do
           :pn_counter ->
-            CRDT.PNCounterServer.merge(pid1, pid2)
+            PCS.merge(pid1, pid2)
+
+          :g_counter ->
+            GCS.merge(pid1, pid2)
 
           _ ->
             {:error, "Invalid replica."}
@@ -72,13 +83,16 @@ defmodule CRDT.Replica do
   @spec compare(pid, pid) :: boolean | {:error, String.t()}
   def compare(replica, replica2) do
     case with_two_replicas(replica, replica2) do
-      {type1, _, type2, _} when type1 != type2 ->
-        {:error, "The replicas do not have the same type."}
+      {:error, error} ->
+        {:error, error}
 
-      {type, pid1, _, pid2} ->
+      {type, pid1, pid2} ->
         case type do
           :pn_counter ->
-            CRDT.PNCounterServer.compare(pid1, pid2)
+            PCS.compare(pid1, pid2)
+
+          :g_counter ->
+            GCS.compare(pid1, pid2)
 
           _ ->
             {:error, "Invalid replica."}
@@ -97,7 +111,11 @@ defmodule CRDT.Replica do
   defp with_two_replicas(replica1, replica2) do
     Agent.get(replica1, fn {type1, pid1} ->
       Agent.get(replica2, fn {type2, pid2} ->
-        {type1, pid1, type2, pid2}
+        if type1 != type2 do
+          {:error, "The replicas do not have the same type."}
+        else
+          {type1, pid1, pid2}
+        end
       end)
     end)
   end
