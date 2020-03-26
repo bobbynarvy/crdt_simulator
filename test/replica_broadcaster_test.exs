@@ -1,41 +1,17 @@
 defmodule CRDT.ReplicaBroadcasterTest do
   use ExUnit.Case
+  alias CRDT.Registry, as: R
   alias CRDT.ReplicaBroadcaster, as: RB
 
-  describe "when initializing" do
-    test "returns ok" do
-      {status, _} = RB.start_link(:pn_counter, 3)
-      assert status == :ok
-      assert List.length(RB.replicas()) == 3
-    end
-
-    test "throws error there are less than 3 replicas" do
-      {status, _} = RB.start_link(:pn_counter, 1)
-      assert status == :error
-    end
-  end
-
   setup do
-    :ok = RB.start_link(:pn_counter, 3)
+    {:ok, registry_pid} = R.start_link(:pn_counter, 3)
+    {:ok, _} = RB.start_link(registry_pid)
     {:ok}
   end
 
-  test "keeps track of the CRDT type" do
-    type = RB.crdt_type()
-    assert type == :pn_counter
-  end
-
-  test "gets a replica pid by index" do
-    pid = RB.replicas(0)
-    assert Process.alive?(pid) == true
-  end
-
-  test "stops all replicas" do
-    pid = RB.replicas(0)
-    status = RB.stop_replicas()
-    assert Process.alive?(pid) == false
+  test "subscribes to a replica" do
+    status = RB.subscribe(R.replicas(0))
     assert status == :ok
-    assert List.length(RB.replicas()) == 0
   end
 
   test "queries the value of all replicas" do
