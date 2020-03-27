@@ -23,14 +23,14 @@ defmodule CRDT.Replica do
       end
 
     case initial_value do
-      {:ok, pid, type} -> Agent.start_link(fn -> {type, pid} end)
+      {:ok, pid, type} -> Agent.start_link(fn -> {type, pid, []} end)
       {:error, message} -> {:error, message}
     end
   end
 
   @spec query(pid, atom) :: term | {:error, String.t()}
   def query(replica, params) do
-    Agent.get(replica, fn {type, pid} ->
+    Agent.get(replica, fn {type, pid, _} ->
       case type do
         :pn_counter ->
           PCS.query(pid, params)
@@ -46,18 +46,25 @@ defmodule CRDT.Replica do
 
   @spec update(pid, tuple) :: :ok | {:error, String.t()}
   def update(replica, params) do
-    Agent.get(replica, fn {type, pid} ->
-      case type do
-        :pn_counter ->
-          PCS.update(pid, params)
+    result =
+      Agent.get(replica, fn {type, pid, _} ->
+        case type do
+          :pn_counter ->
+            PCS.update(pid, params)
 
-        :g_counter ->
-          GCS.update(pid, params)
+          :g_counter ->
+            GCS.update(pid, params)
 
-        _ ->
-          {:error, "Invalid replica."}
-      end
+          _ ->
+            {:error, "Invalid replica."}
+        end
+      end)
+
+    Agent.get(replica, fn {_, _, subscribers} ->
+      for subscriber <- subscribers, do: send(subscriber, :update)
     end)
+
+    result
   end
 
   @spec merge(pid, pid) :: :ok | {:error, String.t()}
@@ -100,6 +107,13 @@ defmodule CRDT.Replica do
     end
   end
 
+  @spec subscribe(pid, pid) :: :ok
+  def subscribe(replica, subscriber) do
+    Agent.update(replica, fn {type, pid, subscribers} ->
+      {type, pid, [subscriber | subscribers]}
+    end)
+  end
+
   defp initial_value(type, server) do
     case server do
       {:ok, pid} -> {:ok, pid, type}
@@ -109,8 +123,8 @@ defmodule CRDT.Replica do
   end
 
   defp with_two_replicas(replica1, replica2) do
-    Agent.get(replica1, fn {type1, pid1} ->
-      Agent.get(replica2, fn {type2, pid2} ->
+    Agent.get(replica1, fn {type1, pid1, _} ->
+      Agent.get(replica2, fn {type2, pid2, _} ->
         if type1 != type2 do
           {:error, "The replicas do not have the same type."}
         else

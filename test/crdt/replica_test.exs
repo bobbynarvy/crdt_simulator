@@ -56,4 +56,26 @@ defmodule CRDT.ReplicaTest do
     assert query(counter1, :value) == 2
     assert query(counter2, :value) == 2
   end
+
+  test "publishes messages to subscribers" do
+    test_pid = self()
+    {_, replica} = start_link({:pn_counter, 3, 0})
+
+    spawn(fn ->
+      subscribe(replica, self())
+
+      receive do
+        :update -> send(test_pid, :updated)
+      end
+    end)
+
+    update(replica, {:increment})
+
+    result =
+      receive do
+        :updated -> :success
+      end
+
+    assert result == :success
+  end
 end
