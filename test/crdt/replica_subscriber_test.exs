@@ -19,14 +19,13 @@ defmodule CRDT.ReplicaSubscriberTest do
   end
 
   test "subscriber receives and handles replica messages", ctx do
-    Subscriber.subscribe(ctx.replica, self())
+    pid = Subscriber.subscribe(ctx.replica)
     Replica.update(ctx.replica, {:increment})
 
-    result =
-      receive do
-        :ok -> :ok
-      end
+    events = Subscriber.events(pid)
+    [{event, _}] = events
 
-    assert result == :ok
+    assert length(events) == 1
+    assert event == :update
   end
 end

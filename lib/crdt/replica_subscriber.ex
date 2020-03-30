@@ -13,24 +13,49 @@ defmodule CRDT.ReplicaSubscriber do
     quote do
       @behaviour CRDT.ReplicaSubscriber
 
-      def subscribe(replica, from) do
+      def subscribe(replica) do
         spawn(fn ->
           Replica.subscribe(replica, self())
 
-          wait_for_replica_msgs(replica, from)
+          handle_events(replica, %{events: []})
         end)
+      end
+
+      def events(subscriber) do
+        send(subscriber, {:events, self()})
+
+        receive do
+          {:events, events} -> events
+          _ -> {:error, "Events not retrieved."}
+        end
       end
 
       @doc false
       def handle_replica_call(_, _), do: raise("function not implemented")
 
-      defp wait_for_replica_msgs(replica, from) do
-        receive do
-          :update -> send(from, handle_replica_call(replica, :updated))
-          _ -> send(from, {:error, "unhandled replica event"})
-        end
+      defp handle_events(replica, state) do
+        now = DateTime.now("Etc/UTC")
 
-        wait_for_replica_msgs(replica, from)
+        new_state =
+          receive do
+            :update ->
+              handle_replica_call(replica, :updated)
+              %{state | events: [{:update, now} | state.events]}
+
+            {:events, pid} ->
+              send(pid, {:events, state.events})
+              state
+
+            _ ->
+              %{
+                state
+                | events: [
+                    {:error, "unhandled replica event", now} | state.events
+                  ]
+              }
+          end
+
+        handle_events(replica, new_state)
       end
 
       defoverridable handle_replica_call: 2
