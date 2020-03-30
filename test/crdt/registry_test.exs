@@ -6,7 +6,7 @@ defmodule CRDT.RegistryTest do
     test "returns ok" do
       {status, _} = R.start_link(:pn_counter, 3)
       assert status == :ok
-      assert List.length(R.replicas()) == 3
+      assert length(R.replicas()) == 3
     end
 
     test "throws error there are less than 3 replicas" do
@@ -16,8 +16,8 @@ defmodule CRDT.RegistryTest do
   end
 
   setup do
-    :ok = R.start_link(:pn_counter, 3)
-    {:ok}
+    {:ok, pid} = R.start_link(:pn_counter, 3)
+    {:ok, pid: pid}
   end
 
   test "keeps track of the CRDT type" do
@@ -28,13 +28,5 @@ defmodule CRDT.RegistryTest do
   test "gets a replica pid by index" do
     pid = R.replicas(0)
     assert Process.alive?(pid) == true
-  end
-
-  test "stops all replicas" do
-    pid = R.replicas(0)
-    status = R.stop_replicas()
-    assert Process.alive?(pid) == false
-    assert status == :ok
-    assert List.length(R.replicas()) == 0
   end
 end
