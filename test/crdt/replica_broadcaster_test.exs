@@ -2,6 +2,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
   use ExUnit.Case
   alias CRDT.Registry, as: R
   alias CRDT.ReplicaBroadcaster, as: RB
+  alias CRDT.Replica
 
   setup do
     {:ok, registry_pid} = R.start_link(:pn_counter, 3)
@@ -10,8 +11,8 @@ defmodule CRDT.ReplicaBroadcasterTest do
   end
 
   test "subscribes to a replica" do
-    status = RB.subscribe(R.replicas(0))
-    assert status == :ok
+    subscribed? = RB.subscribe?(R.replicas(0))
+    assert subscribed? == true
   end
 
   test "queries the value of all replicas" do
@@ -29,7 +30,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
       RB.start_link(:pn_counter, 3)
 
       replica = RB.replicas(0)
-      CRDT.Replica.update(replica, {:increment})
+      Replica.update(replica, {:increment})
       {:ok}
     end
 
@@ -55,4 +56,55 @@ defmodule CRDT.ReplicaBroadcasterTest do
   end
 
   # TO DO: Tests on deliberate failues and delays
+  describe "when broadcasting with deliberate delays" do
+    setup do
+      RB.start_link(:pn_counter, 3)
+    end
+
+    test "delays a specific replica" do
+      replica = RB.replicas(0)
+
+      status = RB.delay(1, 3000)
+      assert status == :ok
+
+      Replica.update(replica, {:increment})
+
+      # Sleep for one second to make sure that non-delayed messages
+      # have been propagated
+      Process.sleep(1000)
+      assert RB.query(:value) == [1, 0, 1]
+
+      # Sleep for another 2 seconds to make sure that the delayed
+      # message has arrived
+      Process.sleep(2000)
+      assert RB.query(:value) == [1, 1, 1]
+    end
+
+    test "resolves to a valid value when ordering is not correct" do
+      replica = RB.replicas(0)
+      RB.delay(1, 3000)
+
+      # Should update all replicas to have a value of 1
+      Replica.update(replica, {:increment})
+
+      # Except the value or replicas(1) is still 0 because of delay
+      Process.sleep(1000)
+      assert RB.query(:value) == [1, 0, 1]
+
+      # With replicas(1) increment, it should compare itself
+      # with other replicas and determine that it must take its value
+      # from the other ones
+      replica1 = RB.replicas(1)
+      Replica.update(replica1, {:increment})
+
+      Process.sleep(1000)
+      assert RB.query(:value) == [2, 2, 2]
+
+      # With the arrival of the delayed message, replicas(1) should
+      # determine that the resulting value of the delayed message
+      # is smaller than its current value which leads to ignoring it
+      Process.sleep(1000)
+      assert RB.query(:value) == [2, 2, 2]
+    end
+  end
 end
