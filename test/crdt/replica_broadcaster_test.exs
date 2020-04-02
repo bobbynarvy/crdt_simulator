@@ -58,15 +58,15 @@ defmodule CRDT.ReplicaBroadcasterTest do
   describe "when broadcasting with deliberate delays" do
     setup do
       RB.start_link(:pn_counter, 3)
+      replica = RB.replicas(0)
+      {:ok, replica: replica}
     end
 
-    test "delays an update delivery to specific replica" do
-      replica = RB.replicas(0)
-
+    test "delays an update delivery to specific replica", ctx do
       status = RB.delay(1, 3000)
       assert status == :ok
 
-      Replica.update(replica, {:increment})
+      Replica.update(ctx.replica, {:increment})
 
       # Sleep for one second to make sure that non-delayed messages
       # have been propagated
@@ -79,12 +79,25 @@ defmodule CRDT.ReplicaBroadcasterTest do
       assert RB.query(:value) == [1, 1, 1]
     end
 
-    test "resolves to a valid value when ordering is not correct" do
-      replica = RB.replicas(0)
+    test "delay is only applied once", ctx do
+      RB.delay(1, 3000)
+      Replica.update(ctx.replica, {:increment})
+
+      Process.sleep(3000)
+      assert RB.query(:value) == [1, 1, 1]
+
+      # Without a delay, updates should be instantaneous
+      Replica.update(ctx.replica, {:increment})
+
+      Process.sleep(1000)
+      assert RB.query(:value) == [2, 2, 2]
+    end
+
+    test "resolves to a valid value when ordering is not correct", ctx do
       RB.delay(1, 3000)
 
       # Should update all replicas to have a value of 1
-      Replica.update(replica, {:increment})
+      Replica.update(ctx.replica, {:increment})
 
       # Except the value or replicas(1) is still 0 because of delay
       Process.sleep(1000)
@@ -108,10 +121,32 @@ defmodule CRDT.ReplicaBroadcasterTest do
   end
 
   describe "when broadcasting with deliberate failures" do
-    test "fails to deliver update to a replica" do
+    setup do
+      RB.start_link(:pn_counter, 3)
+      replica = RB.replicas(0)
+      {:ok, replica: replica}
     end
 
-    test "eventually resolves to a valid value" do
+    test "fails to deliver update to a replica", ctx do
+      RB.fail(1)
+
+      Replica.update(ctx.replica, {:increment})
+
+      Process.sleep(1000)
+      assert RB.query(:value) == [1, 0, 1]
+    end
+
+    test "eventually resolves to a valid value", ctx do
+      RB.fail(1)
+
+      # Will fail to deliver to replicas(1)
+      Replica.update(ctx.replica, {:increment})
+
+      # Will deliver to replicas(1)
+      Replica.update(ctx.replica, {:increment})
+      Process.sleep(1000)
+
+      assert RB.query(:value) == [2, 2, 2]
     end
   end
 end
