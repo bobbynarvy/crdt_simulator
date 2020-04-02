@@ -55,13 +55,12 @@ defmodule CRDT.ReplicaBroadcasterTest do
     end
   end
 
-  # TO DO: Tests on deliberate failues and delays
   describe "when broadcasting with deliberate delays" do
     setup do
       RB.start_link(:pn_counter, 3)
     end
 
-    test "delays a specific replica" do
+    test "delays an update delivery to specific replica" do
       replica = RB.replicas(0)
 
       status = RB.delay(1, 3000)
@@ -105,6 +104,14 @@ defmodule CRDT.ReplicaBroadcasterTest do
       # is smaller than its current value which leads to ignoring it
       Process.sleep(1000)
       assert RB.query(:value) == [2, 2, 2]
+    end
+  end
+
+  describe "when broadcasting with deliberate failures" do
+    test "fails to deliver update to a replica" do
+    end
+
+    test "eventually resolves to a valid value" do
     end
   end
 end
