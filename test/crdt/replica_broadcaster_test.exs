@@ -6,12 +6,12 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   setup do
     {:ok, registry_pid} = R.start_link(:pn_counter, 3)
-    {:ok, _} = RB.start_link(registry_pid)
-    {:ok}
+    RB.start_link(registry_pid)
+    :ok
   end
 
   test "subscribes to a replica" do
-    subscribed? = RB.subscribe?(R.replicas(0))
+    subscribed? = RB.subscribed?(R.replicas(0))
     assert subscribed? == true
   end
 
@@ -27,11 +27,12 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   describe "when updating a replica" do
     setup do
-      RB.start_link(:pn_counter, 3)
+      {:ok, registry_pid} = R.start_link(:pn_counter, 3)
+      {:ok, _} = RB.start_link(registry_pid)
 
-      replica = RB.replicas(0)
+      replica = R.replicas(0)
       Replica.update(replica, {:increment})
-      {:ok}
+      :ok
     end
 
     test "sends a merge message to replicas" do
@@ -49,17 +50,17 @@ defmodule CRDT.ReplicaBroadcasterTest do
     test "sends a message only to the non-origin replicas" do
       %{recipients: recipients} = List.last(RB.messages())
 
-      assert Enum.member?(recipients, RB.replicas(0)) == false
-      assert Enum.member?(recipients, RB.replicas(1)) == true
-      assert Enum.member?(recipients, RB.replicas(2)) == true
+      assert Enum.member?(recipients, R.replicas(0)) == false
+      assert Enum.member?(recipients, R.replicas(1)) == true
+      assert Enum.member?(recipients, R.replicas(2)) == true
     end
   end
 
   describe "when broadcasting with deliberate delays" do
     setup do
-      RB.start_link(:pn_counter, 3)
-      replica = RB.replicas(0)
-      {:ok, replica: replica}
+      {:ok, registry_pid} = R.start_link(:pn_counter, 3)
+      {:ok, _} = RB.start_link(registry_pid)
+      {:ok, replica: R.replicas(0)}
     end
 
     test "delays an update delivery to specific replica", ctx do
@@ -106,7 +107,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
       # With replicas(1) increment, it should compare itself
       # with other replicas and determine that it must take its value
       # from the other ones
-      replica1 = RB.replicas(1)
+      replica1 = R.replicas(1)
       Replica.update(replica1, {:increment})
 
       Process.sleep(1000)
@@ -122,9 +123,9 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   describe "when broadcasting with deliberate failures" do
     setup do
-      RB.start_link(:pn_counter, 3)
-      replica = RB.replicas(0)
-      {:ok, replica: replica}
+      {:ok, registry_pid} = R.start_link(:pn_counter, 3)
+      {:ok, _} = RB.start_link(registry_pid)
+      {:ok, replica: R.replicas(0)}
     end
 
     test "fails to deliver update to a replica", ctx do
