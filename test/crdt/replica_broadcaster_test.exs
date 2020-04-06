@@ -48,6 +48,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
     end
 
     test "sends a message only to the non-origin replicas" do
+      Process.sleep(1000)
       %{recipients: recipients} = List.last(RB.messages())
 
       assert Enum.member?(recipients, R.replicas(0)) == false
