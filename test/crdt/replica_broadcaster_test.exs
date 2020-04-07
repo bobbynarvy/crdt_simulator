@@ -85,7 +85,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
       RB.delay(1, 3000)
       Replica.update(ctx.replica, {:increment})
 
-      Process.sleep(3000)
+      Process.sleep(4000)
       assert RB.query(:value) == [1, 1, 1]
 
       # Without a delay, updates should be instantaneous

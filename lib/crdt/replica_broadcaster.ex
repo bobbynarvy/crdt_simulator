@@ -5,6 +5,8 @@ defmodule CRDT.ReplicaBroadcaster do
   alias CRDT.Registry
   alias CRDT.Replica
 
+  @empty_delay %{replica: nil, duration: 0}
+
   def start_link(registry_pid) do
     {:ok, broadcaster} = Broadcaster.start_link()
 
@@ -20,10 +22,9 @@ defmodule CRDT.ReplicaBroadcaster do
       messages: [],
       subscriptions: subscriptions,
       # delays the next update to a given replica
-      delay: %{
-        replica: nil,
-        duration: 0
-      }
+      delay: @empty_delay,
+      # fails the next update to a given replica
+      fail: nil
     }
 
     {:ok, Agent.start_link(fn -> initial_state end, name: __MODULE__)}
@@ -47,7 +48,22 @@ defmodule CRDT.ReplicaBroadcaster do
     end
   end
 
-  def delay(index, duration), do: set_delay(index, duration)
+  def delay(index, duration) do
+    Agent.update(__MODULE__, fn state ->
+      Map.merge(state, %{
+        delay: %{
+          replica: Enum.at(state.subscriptions, index),
+          duration: duration
+        }
+      })
+    end)
+  end
+
+  def fail(index),
+    do:
+      Agent.update(__MODULE__, fn state ->
+        %{state | fail: Enum.at(state.subscriptions, index)}
+      end)
 
   def handle_replica_call(replica, type) do
     neighbors = Enum.filter(state().subscriptions, fn pid -> pid != replica end)
@@ -66,6 +82,10 @@ defmodule CRDT.ReplicaBroadcaster do
           )
         end
 
+        Agent.update(__MODULE__, fn state ->
+          Map.merge(state, %{delay: @empty_delay, fail: nil})
+        end)
+
       _ ->
         {:error, "Undefined replica update"}
     end
@@ -76,14 +96,11 @@ defmodule CRDT.ReplicaBroadcaster do
   end
 
   defp broadcaster_opts(replica) do
-    %{}
-    |> (fn opts ->
-          if state().delay.replica == replica do
-            %{delay: state().delay.duration}
-          else
-            opts
-          end
-        end).()
+    cond do
+      state().fail == replica -> %{fail: true}
+      state().delay.replica == replica -> %{delay: state().delay.duration}
+      true -> %{}
+    end
   end
 
   defp add_update_message(sender_pid, neighbor_pids) do
@@ -91,17 +108,6 @@ defmodule CRDT.ReplicaBroadcaster do
 
     Agent.update(__MODULE__, fn state ->
       %{state | messages: state.messages ++ [update_message]}
-    end)
-  end
-
-  defp set_delay(index, duration) do
-    Agent.update(__MODULE__, fn state ->
-      Map.merge(state, %{
-        delay: %{
-          replica: Enum.at(state.subscriptions, index),
-          duration: duration
-        }
-      })
     end)
   end
 end
