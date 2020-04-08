@@ -1,18 +1,8 @@
 defmodule CRDTSimulator do
-  @moduledoc """
-  Documentation for `CRDTSimulator`.
-  """
+  use Application
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> CRDTSimulator.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def start(_type, _args) do
+    IO.puts("Starting CRDTSimulator...")
+    Supervisor.start_link([], strategy: :one_for_one)
   end
 end
