@@ -7,7 +7,7 @@ defmodule CRDT.ReplicaBroadcaster do
 
   @empty_delay %{replica: nil, duration: 0}
 
-  def start_link(registry_pid) do
+  def start_link() do
     {:ok, broadcaster} = Broadcaster.start_link()
 
     subscriptions =

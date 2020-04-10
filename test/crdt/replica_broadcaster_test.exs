@@ -4,31 +4,33 @@ defmodule CRDT.ReplicaBroadcasterTest do
   alias CRDT.ReplicaBroadcaster, as: RB
   alias CRDT.Replica
 
-  setup do
-    {:ok, registry_pid} = R.start_link(:pn_counter, 3)
-    RB.start_link(registry_pid)
-    :ok
-  end
+  describe "when using" do
+    setup do
+      {:ok, _} = R.start_link(:pn_counter, 3)
+      RB.start_link()
+      :ok
+    end
 
-  test "subscribes to a replica" do
-    subscribed? = RB.subscribed?(R.replicas(0))
-    assert subscribed? == true
-  end
+    test "subscribes to a replica" do
+      subscribed? = RB.subscribed?(R.replicas(0))
+      assert subscribed? == true
+    end
 
-  test "queries the value of all replicas" do
-    value = RB.query(:value)
-    assert value == [0, 0, 0]
-  end
+    test "queries the value of all replicas" do
+      value = RB.query(:value)
+      assert value == [0, 0, 0]
+    end
 
-  test "queries the value of a replica" do
-    value = RB.query(:value, 0)
-    assert value == 0
+    test "queries the value of a replica" do
+      value = RB.query(:value, 0)
+      assert value == 0
+    end
   end
 
   describe "when updating a replica" do
     setup do
-      {:ok, registry_pid} = R.start_link(:pn_counter, 3)
-      {:ok, _} = RB.start_link(registry_pid)
+      {:ok, _} = R.start_link(:pn_counter, 3)
+      {:ok, _} = RB.start_link()
 
       replica = R.replicas(0)
       Replica.update(replica, {:increment})
@@ -59,8 +61,8 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   describe "when broadcasting with deliberate delays" do
     setup do
-      {:ok, registry_pid} = R.start_link(:pn_counter, 3)
-      {:ok, _} = RB.start_link(registry_pid)
+      {:ok, _} = R.start_link(:pn_counter, 3)
+      {:ok, _} = RB.start_link()
       {:ok, replica: R.replicas(0)}
     end
 
@@ -124,8 +126,8 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   describe "when broadcasting with deliberate failures" do
     setup do
-      {:ok, registry_pid} = R.start_link(:pn_counter, 3)
-      {:ok, _} = RB.start_link(registry_pid)
+      {:ok, _} = R.start_link(:pn_counter, 3)
+      {:ok, _} = RB.start_link()
       {:ok, replica: R.replicas(0)}
     end
 
