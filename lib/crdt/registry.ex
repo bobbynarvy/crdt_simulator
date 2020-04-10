@@ -16,7 +16,7 @@ defmodule CRDT.Registry do
         :g_set -> create_replicas(num_reps, fn n -> {:g_set, n} end)
       end
 
-    {:ok, Agent.start_link(fn -> %{type: type, replicas: replicas} end, name: __MODULE__)}
+    Agent.start_link(fn -> %{type: type, replicas: replicas} end, name: __MODULE__)
   end
 
   def start_link(type, _) when type not in @replica_types do

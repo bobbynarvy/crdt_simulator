@@ -15,18 +15,20 @@ defmodule CRDT.RegistryTest do
     end
   end
 
-  setup do
-    {:ok, pid} = R.start_link(:pn_counter, 3)
-    {:ok, pid: pid}
-  end
+  describe "when using" do
+    setup do
+      {:ok, pid} = R.start_link(:pn_counter, 3)
+      {:ok, pid: pid}
+    end
 
-  test "keeps track of the CRDT type" do
-    type = R.crdt_type()
-    assert type == :pn_counter
-  end
+    test "keeps track of the CRDT type" do
+      type = R.crdt_type()
+      assert type == :pn_counter
+    end
 
-  test "gets a replica pid by index" do
-    pid = R.replicas(0)
-    assert Process.alive?(pid) == true
+    test "gets a replica pid by index" do
+      pid = R.replicas(0)
+      assert Process.alive?(pid) == true
+    end
   end
 end
