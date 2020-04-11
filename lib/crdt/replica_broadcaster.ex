@@ -27,7 +27,7 @@ defmodule CRDT.ReplicaBroadcaster do
       fail: nil
     }
 
-    {:ok, Agent.start_link(fn -> initial_state end, name: __MODULE__)}
+    Agent.start_link(fn -> initial_state end, name: __MODULE__)
   end
 
   def subscribed?(pid), do: Enum.member?(state().subscriptions, pid)

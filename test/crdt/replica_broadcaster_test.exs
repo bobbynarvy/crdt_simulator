@@ -6,7 +6,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   describe "when using" do
     setup do
-      {:ok, _} = R.start_link(:pn_counter, 3)
+      {:ok, _} = R.start_link({:pn_counter, 3})
       RB.start_link()
       :ok
     end
@@ -29,7 +29,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   describe "when updating a replica" do
     setup do
-      {:ok, _} = R.start_link(:pn_counter, 3)
+      {:ok, _} = R.start_link({:pn_counter, 3})
       {:ok, _} = RB.start_link()
 
       replica = R.replicas(0)
@@ -61,7 +61,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   describe "when broadcasting with deliberate delays" do
     setup do
-      {:ok, _} = R.start_link(:pn_counter, 3)
+      {:ok, _} = R.start_link({:pn_counter, 3})
       {:ok, _} = RB.start_link()
       {:ok, replica: R.replicas(0)}
     end
@@ -77,9 +77,9 @@ defmodule CRDT.ReplicaBroadcasterTest do
       Process.sleep(1000)
       assert RB.query(:value) == [1, 0, 1]
 
-      # Sleep for another 2 seconds to make sure that the delayed
+      # Sleep for another 2.5 seconds to make sure that the delayed
       # message has arrived
-      Process.sleep(2000)
+      Process.sleep(2500)
       assert RB.query(:value) == [1, 1, 1]
     end
 
@@ -126,7 +126,7 @@ defmodule CRDT.ReplicaBroadcasterTest do
 
   describe "when broadcasting with deliberate failures" do
     setup do
-      {:ok, _} = R.start_link(:pn_counter, 3)
+      {:ok, _} = R.start_link({:pn_counter, 3})
       {:ok, _} = RB.start_link()
       {:ok, replica: R.replicas(0)}
     end

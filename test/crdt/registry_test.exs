@@ -4,20 +4,20 @@ defmodule CRDT.RegistryTest do
 
   describe "when initializing" do
     test "returns ok" do
-      {status, _} = R.start_link(:pn_counter, 3)
+      {status, _} = R.start_link({:pn_counter, 3})
       assert status == :ok
       assert length(R.replicas()) == 3
     end
 
     test "throws error there are less than 3 replicas" do
-      {status, _} = R.start_link(:pn_counter, 1)
+      {status, _} = R.start_link({:pn_counter, 1})
       assert status == :error
     end
   end
 
   describe "when using" do
     setup do
-      {:ok, pid} = R.start_link(:pn_counter, 3)
+      {:ok, pid} = R.start_link({:pn_counter, 3})
       {:ok, pid: pid}
     end
 
