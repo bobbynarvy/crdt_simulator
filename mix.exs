@@ -13,7 +13,6 @@ defmodule CRDTSimulator.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      mod: {CRDTSimulator, []},
       extra_applications: [:logger]
     ]
   end
