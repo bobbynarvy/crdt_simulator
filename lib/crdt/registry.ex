@@ -36,7 +36,7 @@ defmodule CRDT.Registry do
   def crdt_type(), do: Agent.get(__MODULE__, fn state -> state.type end)
 
   defp create_replicas(num_reps, tuple_fn) do
-    for n <- 1..num_reps do
+    for n <- 0..(num_reps - 1) do
       {:ok, replica} = R.start_link(tuple_fn.(n))
       replica
     end
