@@ -25,13 +25,20 @@ defmodule CRDT.Poller do
     replica_values = Agent.get(__MODULE__, fn state -> state.replica_values end)
 
     if current_values != replica_values do
-      values_string = Enum.map(current_values, &Integer.to_string/1) |> Enum.join(", ")
-      IO.puts("Replicas updated: #{values_string}")
+      IO.puts("Replicas updated: #{values_to_string(current_values)}")
       Agent.update(__MODULE__, fn state -> %{state | replica_values: current_values} end)
     end
 
     Process.sleep(Agent.get(__MODULE__, fn state -> state.interval end))
 
     poll_process()
+  end
+
+  defp values_to_string(values) do
+    case CRDT.Registry.crdt_type() do
+      :g_counter -> Enum.map(values, &Integer.to_string/1) |> Enum.join(", ")
+      :pn_counter -> Enum.map(values, &Integer.to_string/1) |> Enum.join(", ")
+      _ -> "Error: values not yet converted to string"
+    end
   end
 end
