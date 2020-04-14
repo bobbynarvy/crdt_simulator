@@ -64,20 +64,16 @@ defmodule CRDT.PNCounter do
     {merge_part(p1, p2), merge_part(n1, n2)}
   end
 
-  @doc """
-  Checks if all of a sub-counter's values are less than or equal
-  to another's
-  """
+  # Checks if all of a sub-counter's values are less than or equal
+  # to another's
   defp all_smaller_values?(list1, list2) do
     List.zip([list1, list2])
     |> Enum.filter(fn {x1, x2} -> x1 > x2 end)
     |> (fn results -> length(results) == 0 end).()
   end
 
-  @doc """
-  Merges two sub-counters by getting the higher value of
-  the values of both sub-counters in the same position
-  """
+  # Merges two sub-counters by getting the higher value of
+  # the values of both sub-counters in the same position
   defp merge_part(list1, list2) do
     List.zip([list1, list2])
     |> Enum.map(fn {x1, x2} -> Enum.max([x1, x2]) end)

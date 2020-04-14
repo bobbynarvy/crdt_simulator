@@ -34,6 +34,12 @@ defmodule CRDT.GCounterServer do
     GenServer.call(server, {:merge, server2})
   end
 
+  @impl true
+  def init(state) do
+    {:ok, state}
+  end
+
+  @impl true
   def handle_call({:query, type}, _from, state) do
     case type do
       :payload -> {:reply, state.payload, state}
@@ -41,16 +47,19 @@ defmodule CRDT.GCounterServer do
     end
   end
 
+  @impl true
   def handle_call({:update, :increment}, _from, state) do
     new_state = %{state | payload: GC.update({:increment, state.payload, state.position})}
     {:reply, :ok, new_state}
   end
 
+  @impl true
   def handle_call({:compare, server2}, _from, state) do
     server2_payload = query(server2, :payload)
     {:reply, GC.compare(state.payload, server2_payload), state}
   end
 
+  @impl true
   def handle_call({:merge, server2}, _from, state) do
     server2_payload = query(server2, :payload)
     new_state = %{state | payload: GC.merge(state.payload, server2_payload)}
