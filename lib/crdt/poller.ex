@@ -1,6 +1,14 @@
 defmodule CRDT.Poller do
   use Agent
 
+  @moduledoc """
+  Polls the replicas in the registry
+  and prompts on updates
+  """
+
+  @doc """
+  Start the poller with an optional polling interval
+  """
   def start_link(poll_interval \\ 1000) do
     IO.puts("Starting to poll replicas...")
 

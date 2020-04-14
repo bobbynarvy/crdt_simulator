@@ -1,6 +1,6 @@
 defmodule CRDT.GSet do
   @moduledoc """
-  Implements a Grow-only set CRDT
+  Implements operations related to a Grow-only set CRDT
   """
 
   import MapSet

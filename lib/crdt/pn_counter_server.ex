@@ -4,8 +4,15 @@ defmodule CRDT.PNCounterServer do
   alias CRDT.Server, as: Server
   @behaviour Server
 
+  @moduledoc """
+  Implements a stateful Positive-Negative Counter CRDT
+  """
+
   # Client
 
+  @doc """
+  Starts a counter server process
+  """
   @impl Server
   def start_link({n, position}) do
     state = %{
@@ -16,21 +23,33 @@ defmodule CRDT.PNCounterServer do
     GenServer.start_link(__MODULE__, state)
   end
 
+  @doc """
+  Queries the state of the counter
+  """
   @impl Server
   def query(server, type) do
     GenServer.call(server, {:query, type})
   end
 
+  @doc """
+  Updates the value of the counter
+  """
   @impl Server
   def update(server, {type}) do
     GenServer.call(server, {:update, type})
   end
 
+  @doc """
+  Compares the values of two counters
+  """
   @impl Server
   def compare(server1, server2) do
     GenServer.call(server1, {:compare, server2})
   end
 
+  @doc """
+  Merges the values of two counters
+  """
   @impl Server
   def merge(server1, server2) do
     GenServer.call(server1, {:merge, server2})

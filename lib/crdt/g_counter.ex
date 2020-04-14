@@ -1,6 +1,6 @@
 defmodule CRDT.GCounter do
   @moduledoc """
-  Implements a Grow-only Counter CRDT
+  Implements operations related to a Grow-only Counter CRDT
   """
 
   @doc """

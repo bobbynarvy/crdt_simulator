@@ -1,9 +1,11 @@
 defmodule CRDT.Replica do
-  # A wrapper for the different CRDT implementations
-
   alias CRDT.PNCounterServer, as: PCS
   alias CRDT.GCounterServer, as: GCS
   use Agent
+
+  @moduledoc """
+  A wrapper for the different CRDT implementations
+  """
 
   @spec start_link(tuple) :: {:ok, pid} | {:error, String.t()}
   def start_link(params) do

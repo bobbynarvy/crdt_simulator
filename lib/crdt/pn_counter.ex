@@ -1,6 +1,6 @@
 defmodule CRDT.PNCounter do
   @moduledoc """
-  Implements a Positive-Negative Counter CRDT
+  Implements operations related to a Positive-Negative Counter CRDT
   """
 
   @doc """

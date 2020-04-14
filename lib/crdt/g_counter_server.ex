@@ -4,6 +4,13 @@ defmodule CRDT.GCounterServer do
   alias CRDT.Server, as: Server
   @behaviour Server
 
+  @moduledoc """
+  Implements a stateful Grow-only Counter CRDT
+  """
+
+  @doc """
+  Starts a counter server process
+  """
   @impl Server
   def start_link({n, pos}) do
     init_state = %{
@@ -14,21 +21,33 @@ defmodule CRDT.GCounterServer do
     GenServer.start_link(__MODULE__, init_state)
   end
 
+  @doc """
+  Queries the state of the counter 
+  """
   @impl Server
   def query(server, type) do
     GenServer.call(server, {:query, type})
   end
 
+  @doc """
+  Increments the value of the counter 
+  """
   @impl Server
   def update(server, {:increment}) do
     GenServer.call(server, {:update, :increment})
   end
 
+  @doc """
+  Compares the value of one counter to another
+  """
   @impl Server
   def compare(server, server2) do
     GenServer.call(server, {:compare, server2})
   end
 
+  @doc """
+  Merges the value of one counter with another
+  """
   @impl Server
   def merge(server, server2) do
     GenServer.call(server, {:merge, server2})
