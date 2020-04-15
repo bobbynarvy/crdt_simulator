@@ -1,23 +1,47 @@
 defmodule Broadcaster do
   use GenServer
 
+  @moduledoc """
+  Implements a generic broadcaster that sends asynchronous
+  messages from a sending process to other recipients
+  """
+
+  @doc """
+  Creates a broadcaster process
+  """
   def start_link() do
     initial_state = %{recipients: []}
     GenServer.start_link(__MODULE__, initial_state)
   end
 
+  @doc """
+  Adds a recipient process to the 
+  broadcaster state
+  """
   def add_recipient(pid, rec_pid) do
     GenServer.call(pid, {:add_recipient, rec_pid})
   end
 
+  @doc """
+  Returns the recipient pids of the broadcaster
+  """
   def recipients(pid) do
     GenServer.call(pid, {:recipients})
   end
 
+  @doc """
+  Returns a recipient pid by index
+  """
   def recipients(pid, index) do
     GenServer.call(pid, {:recipients, index})
   end
 
+  @doc """
+  Sends a message to recipient(s) by applying
+  a sender function that takes a recipienst pid.
+
+  Optionally delays or fails delivery to a recipient.
+  """
   def send_msg(pid, params) do
     case params do
       {send_fn} ->
@@ -38,6 +62,9 @@ defmodule Broadcaster do
     end
   end
 
+  @doc """
+  Sends a message to all recipients
+  """
   def send_msgs(pid, msgs) do
     for msg <- msgs do
       case msg do

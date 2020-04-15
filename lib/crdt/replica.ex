@@ -7,6 +7,10 @@ defmodule CRDT.Replica do
   A wrapper for the different CRDT implementations
   """
 
+  @doc """
+  Start a replica process that stores a 
+  reference to a CRDT server
+  """
   @spec start_link(tuple) :: {:ok, pid} | {:error, String.t()}
   def start_link(params) do
     initial_value =
@@ -30,6 +34,10 @@ defmodule CRDT.Replica do
     end
   end
 
+  @doc """
+  Query the CRDT server references by a
+  replica process
+  """
   @spec query(pid, atom) :: term | {:error, String.t()}
   def query(replica, params) do
     Agent.get(replica, fn {type, pid, _} ->
@@ -46,6 +54,9 @@ defmodule CRDT.Replica do
     end)
   end
 
+  @doc """
+  Update the state of a replica
+  """
   @spec update(pid, tuple) :: :ok | {:error, String.t()}
   def update(replica, params) do
     result =
@@ -69,6 +80,10 @@ defmodule CRDT.Replica do
     result
   end
 
+  @doc """
+  Merge the value of the replica
+  with that of another
+  """
   @spec merge(pid, pid) :: :ok | {:error, String.t()}
   def merge(replica, replica2) do
     case with_two_replicas(replica, replica2) do
@@ -89,6 +104,10 @@ defmodule CRDT.Replica do
     end
   end
 
+  @doc """
+  Compare the value of the replica
+  with that of another
+  """
   @spec compare(pid, pid) :: boolean | {:error, String.t()}
   def compare(replica, replica2) do
     case with_two_replicas(replica, replica2) do
@@ -109,6 +128,10 @@ defmodule CRDT.Replica do
     end
   end
 
+  @doc """
+  Adds a subscriber to replica updates.
+  Subscribers must use and implement CRDT.ReplicaSubscriber
+  """
   @spec subscribe(pid, pid) :: :ok
   def subscribe(replica, subscriber) do
     Agent.update(replica, fn {type, pid, subscribers} ->

@@ -5,8 +5,16 @@ defmodule CRDT.ReplicaBroadcaster do
   alias CRDT.Registry
   alias CRDT.Replica
 
+  @moduledoc """
+  Broadcasts operations between different replicas
+  and subscribes to replica updates.
+  """
+
   @empty_delay %{replica: nil, duration: 0}
 
+  @doc """
+  Starts the broadcaster
+  """
   def start_link() do
     {:ok, broadcaster} = Broadcaster.start_link()
 
@@ -30,10 +38,19 @@ defmodule CRDT.ReplicaBroadcaster do
     Agent.start_link(fn -> initial_state end, name: __MODULE__)
   end
 
+  @doc """
+  Checks if the broadcaster if subscribed to a replica process
+  """
   def subscribed?(pid), do: Enum.member?(state().subscriptions, pid)
 
+  @doc """
+  Returns the update messages that have been received by the broadcaster
+  """
   def messages(), do: state().messages
 
+  @doc """
+  Queries all replicas
+  """
   def query(type) do
     case type do
       :value -> for replica <- state().subscriptions, do: Replica.query(replica, :value)
@@ -41,6 +58,9 @@ defmodule CRDT.ReplicaBroadcaster do
     end
   end
 
+  @doc """
+  Queries a replica
+  """
   def query(type, index) do
     case type do
       :value -> Replica.query(Enum.at(state().subscriptions, index), :value)
@@ -48,6 +68,9 @@ defmodule CRDT.ReplicaBroadcaster do
     end
   end
 
+  @doc """
+  Delays delivery of a message to a replica
+  """
   def delay(index, duration) do
     Agent.update(__MODULE__, fn state ->
       Map.merge(state, %{
@@ -59,12 +82,19 @@ defmodule CRDT.ReplicaBroadcaster do
     end)
   end
 
+  @doc """
+  Fails the delivery of a message to a replica
+  """
   def fail(index),
     do:
       Agent.update(__MODULE__, fn state ->
         %{state | fail: Enum.at(state.subscriptions, index)}
       end)
 
+  @doc """
+  Implements the callback required in CRDT.CRDT.ReplicaSubscriber.
+  Merges the value of the updated replica to that of other replicas.
+  """
   def handle_replica_call(replica, type) do
     neighbors = Enum.filter(state().subscriptions, fn pid -> pid != replica end)
 

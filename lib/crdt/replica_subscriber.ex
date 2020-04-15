@@ -13,6 +13,9 @@ defmodule CRDT.ReplicaSubscriber do
     quote do
       @behaviour CRDT.ReplicaSubscriber
 
+      @doc """
+      Subscribes the implementing process to a replica
+      """
       def subscribe(replica) do
         spawn(fn ->
           Replica.subscribe(replica, self())
@@ -21,6 +24,10 @@ defmodule CRDT.ReplicaSubscriber do
         end)
       end
 
+      @doc """
+      Returns a list of events that have been
+      sent to the subscriber
+      """
       def events(subscriber) do
         send(subscriber, {:events, self()})
 

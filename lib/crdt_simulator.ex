@@ -1,6 +1,13 @@
 defmodule CRDTSimulator do
   use Supervisor
 
+  @moduledoc """
+  Main application module
+  """
+
+  @doc """
+  Start the application
+  """
   def start_link({type, num_reps}) do
     IO.puts("Creating a #{type} cluster with #{num_reps} replicas...")
     Supervisor.start_link(__MODULE__, {type, num_reps}, name: __MODULE__)
