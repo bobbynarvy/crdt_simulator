@@ -25,6 +25,7 @@ defmodule CRDTSimulator do
   end
 
   def stop_cluster() do
+    Supervisor.stop(__MODULE__)
   end
 
   def info() do
