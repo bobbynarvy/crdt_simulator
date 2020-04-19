@@ -27,26 +27,21 @@ defmodule CRDT.Poller do
   defp poll_process() do
     current_values =
       for replica <- CRDT.Registry.replicas() do
-        CRDT.Replica.query(replica, :value)
+        case CRDT.Registry.crdt_type() do
+          :g_set -> CRDT.Replica.query(replica, :payload) |> MapSet.to_list()
+          _ -> CRDT.Replica.query(replica, :value)
+        end
       end
 
     replica_values = Agent.get(__MODULE__, fn state -> state.replica_values end)
 
     if current_values != replica_values do
-      IO.puts("Replicas updated: #{values_to_string(current_values)}")
+      IO.inspect(current_values, label: "Replicas updated")
       Agent.update(__MODULE__, fn state -> %{state | replica_values: current_values} end)
     end
 
     Process.sleep(Agent.get(__MODULE__, fn state -> state.interval end))
 
     poll_process()
-  end
-
-  defp values_to_string(values) do
-    case CRDT.Registry.crdt_type() do
-      :g_counter -> Enum.map(values, &Integer.to_string/1) |> Enum.join(", ")
-      :pn_counter -> Enum.map(values, &Integer.to_string/1) |> Enum.join(", ")
-      _ -> "Error: values not yet converted to string"
-    end
   end
 end
