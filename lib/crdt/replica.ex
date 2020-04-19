@@ -1,6 +1,8 @@
 defmodule CRDT.Replica do
   alias CRDT.PNCounterServer, as: PCS
   alias CRDT.GCounterServer, as: GCS
+  alias CRDT.GSetServer, as: GS
+
   use Agent
 
   @moduledoc """
@@ -21,8 +23,8 @@ defmodule CRDT.Replica do
         {:g_counter, size, i} ->
           initial_value(:g_counter, GCS.start_link({size, i}))
 
-        {:g_set, i} ->
-          initial_value(:g_counter, nil)
+        {:g_set} ->
+          initial_value(:g_set, GS.start_link({}))
 
         _ ->
           {:error, "The replica type doesn't exist."}
@@ -38,19 +40,10 @@ defmodule CRDT.Replica do
   Query the CRDT server references by a
   replica process
   """
-  @spec query(pid, atom) :: term | {:error, String.t()}
+  @spec query(pid, atom | tuple) :: term | {:error, String.t()}
   def query(replica, params) do
     Agent.get(replica, fn {type, pid, _} ->
-      case type do
-        :pn_counter ->
-          PCS.query(pid, params)
-
-        :g_counter ->
-          GCS.query(pid, params)
-
-        _ ->
-          {:error, "Invalid replica."}
-      end
+      apply_to_valid_module(type, fn module -> module.query(pid, params) end)
     end)
   end
 
@@ -61,16 +54,7 @@ defmodule CRDT.Replica do
   def update(replica, params) do
     result =
       Agent.get(replica, fn {type, pid, _} ->
-        case type do
-          :pn_counter ->
-            PCS.update(pid, params)
-
-          :g_counter ->
-            GCS.update(pid, params)
-
-          _ ->
-            {:error, "Invalid replica."}
-        end
+        apply_to_valid_module(type, fn module -> module.update(pid, params) end)
       end)
 
     Agent.get(replica, fn {_, _, subscribers} ->
@@ -91,16 +75,7 @@ defmodule CRDT.Replica do
         {:error, error}
 
       {type, pid1, pid2} ->
-        case type do
-          :pn_counter ->
-            PCS.merge(pid1, pid2)
-
-          :g_counter ->
-            GCS.merge(pid1, pid2)
-
-          _ ->
-            {:error, "Invalid replica."}
-        end
+        apply_to_valid_module(type, fn module -> module.merge(pid1, pid2) end)
     end
   end
 
@@ -115,16 +90,7 @@ defmodule CRDT.Replica do
         {:error, error}
 
       {type, pid1, pid2} ->
-        case type do
-          :pn_counter ->
-            PCS.compare(pid1, pid2)
-
-          :g_counter ->
-            GCS.compare(pid1, pid2)
-
-          _ ->
-            {:error, "Invalid replica."}
-        end
+        apply_to_valid_module(type, fn module -> module.compare(pid1, pid2) end)
     end
   end
 
@@ -144,6 +110,25 @@ defmodule CRDT.Replica do
       {:ok, pid} -> {:ok, pid, type}
       {:error, _} -> {:error, "Could not start replica."}
       _ -> {:error, "Invalid server."}
+    end
+  end
+
+  defp crdt_module(atom) do
+    case atom do
+      :pn_counter -> PCS
+      :g_counter -> GCS
+      :g_set -> GS
+      _ -> nil
+    end
+  end
+
+  defp apply_to_valid_module(atom, apply_fn) do
+    valid_atoms = [:pn_counter, :g_counter, :g_set]
+
+    if Enum.member?(valid_atoms, atom) do
+      apply_fn.(crdt_module(atom))
+    else
+      {:error, "Invalid replica"}
     end
   end
 
