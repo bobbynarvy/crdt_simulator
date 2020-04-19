@@ -16,7 +16,7 @@ defmodule CRDT.Registry do
       case type do
         :pn_counter -> create_replicas(num_reps, fn n -> {:pn_counter, num_reps, n} end)
         :g_counter -> create_replicas(num_reps, fn n -> {:g_counter, num_reps, n} end)
-        :g_set -> create_replicas(num_reps, fn n -> {:g_set, n} end)
+        :g_set -> create_replicas(num_reps, fn _ -> {:g_set} end)
       end
 
     Agent.start_link(fn -> %{type: type, replicas: replicas} end, name: __MODULE__)

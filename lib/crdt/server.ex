@@ -6,7 +6,7 @@ defmodule CRDT.Server do
 
   @callback start_link(tuple) :: {:ok, term} | {:error, String.t()}
 
-  @callback query(pid, atom) :: term
+  @callback query(pid, atom | tuple) :: term
 
   @callback update(pid, tuple) :: :ok | {:error, String.t()}
 
