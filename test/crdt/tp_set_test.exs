@@ -24,7 +24,7 @@ defmodule CRDT.TPSetTest do
   end
 
   test "adds an element to a two-phase set", ctx do
-    tp_set = TPS.update({:add, ctx.tp_set, "Hello"})
+    new_tp_set = TPS.update({:add, ctx.tp_set, "Hello"})
     {add, remove} = new_tp_set
 
     assert equal?(add, @hello_set)
@@ -42,7 +42,7 @@ defmodule CRDT.TPSetTest do
     assert TPS.query({:lookup, removed, "Hello"}) == false
   end
 
-  test "does not add when an element has already been removed" do
+  test "does not add when an element has already been removed", ctx do
     added = TPS.update({:add, ctx.tp_set, "Hello"})
     removed = TPS.update({:remove, added, "Hello"})
     without_hello = TPS.update({:add, removed, "Hello"})
