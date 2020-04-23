@@ -25,7 +25,7 @@ defmodule CRDT.TPSet do
     {add, remove} = set
 
     if query({:lookup, set, elem}) == true do
-      {add, put(add, elem)}
+      {add, put(remove, elem)}
     else
       {add, remove}
     end
