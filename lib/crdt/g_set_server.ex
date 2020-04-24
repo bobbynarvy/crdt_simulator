@@ -33,6 +33,14 @@ defmodule CRDT.GSetServer do
   end
 
   @doc """
+  Returns the current set
+  """
+  @impl Server
+  def query(server, :value) do
+    GenServer.call(server, {:query, :value})
+  end
+
+  @doc """
   Adds an element to the set 
   """
   @impl Server
@@ -67,7 +75,7 @@ defmodule CRDT.GSetServer do
   end
 
   @impl true
-  def handle_call({:query, :payload}, _from, state) do
+  def handle_call({:query, payload_or_value}, _from, state) do
     {:reply, state, state}
   end
 

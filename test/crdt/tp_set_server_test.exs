@@ -38,6 +38,15 @@ defmodule CRDT.TPSetServerTest do
     assert query(ctx.pid, {:lookup, :hello}) == false
   end
 
+  test "queries the value of the two-phase set", ctx do
+    update(ctx.pid, {:add, :hello})
+    update(ctx.pid, {:add, :world})
+    update(ctx.pid, {:remove, :hello})
+    IO.inspect(query(ctx.pid, :payload))
+
+    assert MapSet.equal?(query(ctx.pid, :value), MapSet.new([:world]))
+  end
+
   test "compares two two-phase sets", ctx do
     update(ctx.pid2, {:add, :world})
     assert compare(ctx.pid, ctx.pid2) == true

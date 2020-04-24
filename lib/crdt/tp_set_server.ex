@@ -33,6 +33,14 @@ defmodule CRDT.TPSetServer do
   end
 
   @doc """
+  Returns the elements the logically exist in the set 
+  """
+  @impl Server
+  def query(server, :value) do
+    GenServer.call(server, {:query, :value})
+  end
+
+  @doc """
   Adds an element to the set 
   """
   @impl Server
@@ -77,6 +85,12 @@ defmodule CRDT.TPSetServer do
   @impl true
   def handle_call({:query, :payload}, _from, state) do
     {:reply, state, state}
+  end
+
+  @impl true
+  def handle_call({:query, :value}, _from, state) do
+    {add, remove} = state
+    {:reply, MapSet.difference(add, remove), state}
   end
 
   @impl true
