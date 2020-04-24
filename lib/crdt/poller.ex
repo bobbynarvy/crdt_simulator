@@ -27,9 +27,11 @@ defmodule CRDT.Poller do
   defp poll_process() do
     current_values =
       for replica <- CRDT.Registry.replicas() do
-        case CRDT.Registry.crdt_type() do
-          :g_set -> CRDT.Replica.query(replica, :payload) |> MapSet.to_list()
-          _ -> CRDT.Replica.query(replica, :value)
+        value = CRDT.Replica.query(replica, :value)
+
+        case replica do
+          replica when is_map(replica) -> MapSet.to_list(value)
+          _ -> value
         end
       end
 

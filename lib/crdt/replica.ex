@@ -2,6 +2,7 @@ defmodule CRDT.Replica do
   alias CRDT.PNCounterServer, as: PCS
   alias CRDT.GCounterServer, as: GCS
   alias CRDT.GSetServer, as: GS
+  alias CRDT.TPSetServer, as: TPS
 
   use Agent
 
@@ -25,6 +26,9 @@ defmodule CRDT.Replica do
 
         {:g_set} ->
           initial_value(:g_set, GS.start_link({}))
+
+        {:tp_set} ->
+          initial_value(:tp_set, TPS.start_link({}))
 
         _ ->
           {:error, "The replica type doesn't exist."}
@@ -118,12 +122,13 @@ defmodule CRDT.Replica do
       :pn_counter -> PCS
       :g_counter -> GCS
       :g_set -> GS
+      :tp_set -> TPS
       _ -> nil
     end
   end
 
   defp apply_to_valid_module(atom, apply_fn) do
-    valid_atoms = [:pn_counter, :g_counter, :g_set]
+    valid_atoms = [:pn_counter, :g_counter, :g_set, :tp_set]
 
     if Enum.member?(valid_atoms, atom) do
       apply_fn.(crdt_module(atom))
