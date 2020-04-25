@@ -48,3 +48,4 @@ CRDT.ReplicaBroadcaster.fail(0)
 |Grow-only Counter (G-Counter)        |:g_counter   |`{:increment}`                                 |
 |Positive-Negative Counter (Counter)  |:pn_counter  |`{:increment}`, `{:decrement}`                 |
 |Grow-only Set (G-set)                |:g_set       |`{:add, *element*}`                            |
+|Two-phase Set (TP-set)               |:tp_set      |`{:add, *element*}`, `{:remove, *element*}`    |
